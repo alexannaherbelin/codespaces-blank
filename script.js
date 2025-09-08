@@ -1,9 +1,18 @@
 document.getElementById("startSimulation").addEventListener("click", simulationSetup);
 
-
+const c = document.getElementById("myCanvas");
+const ctx = c.getContext("2d");
+//ctx.fillStyle = "green";
+//ctx.fillRect(0, 0, 150, 75);
+ctx.beginPath();
+ctx.arc(100, 100, 50, 0, 2 * Math.PI);
+ctx.fillStyle = "green";
+ctx.lineWidth = 2;
+ctx.fill();
+ctx.stroke();
 
 //var specificAnimalsTotal = 0;
-const specificAnimals = [{type: "girrafe", count: 0, eats: [""]}, {type: "lion", count: 0, eats: ["girrafe", "zebra"]}, {type: "hal", count: 0, eats: [""]}, {type: "ning", count: 0, eats: [""]}]
+const specificAnimals = [{type: "girrafe", count: 0, eats: [""]}, {type: "lion", count: 0, eats: ["girrafe", "zebra"]}, {type: "zebra", count: 0, eats: [""]}, {type: "tiger", count: 0, eats: ["zebra", "girrafe"]}]
 const knownAnimalTypes = specificAnimals.map((x) => x.type);
 
 // for (var b = 0; b < specificAnimals.length; b++){
@@ -18,13 +27,13 @@ function animalSearchFood(needle){
     }
 }
 //How many random animals do you want to create?
-const numberOfRandomAnimals = 100;
+const numberOfRandomAnimals = 10;
 const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
 const worldPopulation = [];
 
 
 //At what value do you want the animals to starve to death?
-const starveValue = 100;
+const starveValue = 10;
 
 
 
@@ -170,12 +179,12 @@ function updateSimulation(){
     for(var i = 0; i < worldPopulation.length; i++){
         if(worldPopulation[i].x === 0){
             if(worldPopulation[i].timealive === 0){
-                worldPopulation[i].x = Math.floor(Math.random() * 10000);
+                worldPopulation[i].x = Math.floor(Math.random() * (organism.maximumBoundary + 1));
             }
         }
         if(worldPopulation[i].y === 0){
             if(worldPopulation[i].timealive === 0){
-                worldPopulation[i].y = Math.floor(Math.random() * 10000);
+                worldPopulation[i].y = Math.floor(Math.random() * (organism.maximumBoundary + 1));
             }
         }
         if(worldPopulation[i].state != "dead" ){
@@ -224,14 +233,14 @@ function updateSimulation(){
         if(worldPopulation[i].x > organism.maximumBoundary){
             worldPopulation[i].x = organism.maximumBoundary;
         }
-        if(worldPopulation[i].x < -organism.maximumBoundary){
-            worldPopulation[i].x = -organism.maximumBoundary;
+        if(worldPopulation[i].x < 0){
+            worldPopulation[i].x = 0;
         }
         if(worldPopulation[i].y > organism.maximumBoundary){
             worldPopulation[i].y = organism.maximumBoundary;
         }
-        if(worldPopulation[i].y < -organism.maximumBoundary){
-            worldPopulation[i].y = -organism.maximumBoundary;
+        if(worldPopulation[i].y < 0){
+            worldPopulation[i].y = 0;
         }
         
     }
@@ -243,7 +252,7 @@ function updateSimulation(){
                 if(worldPopulation[i].x === worldPopulation[j].x && worldPopulation[i].y === worldPopulation[j].y){
                     //Animals eat eachother
                     if(worldPopulation[i].state != "dead"){
-                        var onTheMenu = animalSearchFood(worldPopulation[i].type)
+                        var onTheMenu = animalSearchFood(worldPopulation[i].type);
                         if(onTheMenu.includes(worldPopulation[j].type)){
                             console.log("There was a murder: " + worldPopulation[i].type + i + " ate " + worldPopulation[j].type + j );
                             worldPopulation[j].state = "dead";

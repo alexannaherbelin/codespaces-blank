@@ -29,12 +29,54 @@ function animalSearchFood(needle){
 const numberOfRandomAnimals = 100;
 const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
 const worldPopulation = [];
+const worldPlants = [];
+const numberOfRandomPlants = 50
 
 
 //At what value do you want the animals to starve to death?
 const starveValue = 10000;
 
+//creates a plant class 
+class Plants{
+    static knownStates = ["alive", "dead"]
+    static maximumBoundary = 999;
+    constructor(x, y, state, timealive){
+        if(typeof x === "number"){
+            if(Math.abs(x) > Organism.maximumBoundary){
+                throw new Error("ERROR: X Value is out of range. (" + x + ") Maximum X value: +/-" + Organism.maximumBoundary);
+            }
+            this.x = x;
+        }else{
+            throw new Error("ERROR: X is Not A Number- " + x);
+        }
 
+        if(typeof y === "number"){
+            if(Math.abs(y)>Organism.maximumBoundary){
+                throw new Error("ERROR: Y Value is out of range. (" + y + ") Maximum Y value: +/-" + Organism.maximumBoundary);
+            }
+            this.y = y;
+        }else{
+            throw new Error("ERROR: Y is Not A Number- " + y);
+        }
+
+
+        if(Plants.knownStates.includes(state)){
+            this.state = state;
+        }else{
+            throw new Error("ERROR: Unknown State- " + state + " Valid States: " + Plants.knownStates);
+        }
+       
+        if(typeof timealive === "number"){
+            if(timealive < 0){
+                throw new Error("ERROR: Time Alive Value is Not A Positive Number. (" + timealive + ")");
+            }else{
+                this.timealive = timealive;
+            }
+        }else{
+            throw new Error("ERROR: Time Alive Value is Not A Number- " + timealive);
+        }
+    }
+}
 
 //Creates an "Organism" class which has properties x, y, and speed, and a state.\
 class Organism {
@@ -127,6 +169,10 @@ for (var i = 0; i < numberOfRandomAnimals; i++){
     worldPopulation.push(temp);
 }
 
+for (var i = 0; i < numberOfRandomPlants; i++){
+    const temp = new Plants(0, 0, "alive", 0);
+    worldPlants.push(temp);
+}
 
 specificAnimals.forEach(animal => {
 //    console.log (animal.type + ": " + animal.count);
@@ -164,7 +210,7 @@ function updateSimulation(){
 
     //This checks if an Organism has food, and if it doesnt starts a starving count. When this reaches the starve value, the animals state becomes "dead".
     for(var i = 0; i < worldPopulation.length; i++){
-        console.log(worldPopulation[i]);
+
         if(worldPopulation[i].food === 0 && worldPopulation[i].state != "dead"){
             worldPopulation[i].state = "starving";
         }else if(worldPopulation[i].food > 0){
@@ -192,6 +238,23 @@ function updateSimulation(){
         }
         if(worldPopulation[i].state != "dead" ){
             worldPopulation[i].timealive += 1
+        }
+    }
+
+    //This will make Plants appear at a random position to start using math.random
+    for(var i = 0; i < worldPlants.length; i++){
+        if(worldPlants[i].x === 0){
+            if(worldPlants[i].timealive === 0){
+                worldPlants[i].x = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
+            }
+        }
+        if(worldPlants[i].y === 0){
+            if(worldPlants[i].timealive === 0){
+                worldPlants[i].y = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
+            }
+        }
+        if(worldPlants[i].state != "dead" ){
+            worldPlants[i].timealive += 1
         }
     }
 
@@ -264,7 +327,12 @@ function updateSimulation(){
                             worldPopulation[i].food += 1000;
                         }
                     }
-                    //console.log("Organisms collided (i & j are in the same place i: " + i + " j: " + j);
+                    //Animals Reproduce
+                    if(worldPopulation[i].state != "dead" && worldPopulation[i].type === worldPopulation[j].type && worldPopulation[i].food >= 10/*The organism has to have at least 10 food to reproduce*/ && worldPopulation[j].food >= 10 && worldPopulation[i].timealive >= 10 && worldPopulation[j].timealive >= 10){
+                        const temp = new Organism(worldPopulation[i].x, worldPopulation[i].y, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", worldPopulation[i].type, 5, 0, 0);
+                        worldPopulation.push(temp);
+                    }
+
                 }
             }
         }
@@ -286,7 +354,24 @@ function updateSimulation(){
         ctx.fill();
         ctx.stroke();
     }
+
+    //Displaying information on organisms
+    var aliveOrganisms = 0;
+    var deadOrganisms = 0;
+    var starvingOrganisms = 0; 
+    for(var i = 0; i < worldPopulation.length; i++){
+        if(worldPopulation[i].state === "alive"){
+            aliveOrganisms += 1
+        }
+        if(worldPopulation[i].state === "dead"){
+            deadOrganisms += 1
+        }
+        if(worldPopulation[i].state === "starving"){
+            starvingOrganisms += 1
+        }
+    }
+    document.getElementById("data").innerHTML = "Number of Alive Organisms: " + aliveOrganisms + "<br>Number of Dead Organisms: " + deadOrganisms + "<br>Number of Starving Organisms: " + starvingOrganisms;
 }
 
-//This calls the function updateSimulation every second(1000 milliseconds)
+//This calls the function updateSimulation every second(1 millisecond)
 setInterval(updateSimulation, 1);

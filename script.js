@@ -11,7 +11,7 @@ const ctx = c.getContext("2d");
 // ctx.stroke();
 
 //var specificAnimalsTotal = 0;
-const specificAnimals = [{type: "girrafe", count: 0, eats: [""]}, {type: "lion", count: 0, eats: ["girrafe", "zebra"]}, {type: "zebra", count: 0, eats: [""]}, {type: "tiger", count: 0, eats: ["zebra", "girrafe"]}]
+const specificAnimals = [{type: "girrafe", count: 0, eats: ["plant"]}, {type: "lion", count: 0, eats: ["girrafe", "zebra"]}, {type: "zebra", count: 0, eats: ["plant"]}, {type: "tiger", count: 0, eats: ["zebra", "girrafe"]}]
 const knownAnimalTypes = specificAnimals.map((x) => x.type);
 
 // for (var b = 0; b < specificAnimals.length; b++){
@@ -30,7 +30,8 @@ const numberOfRandomAnimals = 100;
 const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
 const worldPopulation = [];
 const worldPlants = [];
-const numberOfRandomPlants = 50
+const numberOfRandomPlants = 100
+const organismSize = 10
 
 
 //At what value do you want the animals to starve to death?
@@ -58,7 +59,6 @@ class Plants{
         }else{
             throw new Error("ERROR: Y is Not A Number- " + y);
         }
-
 
         if(Plants.knownStates.includes(state)){
             this.state = state;
@@ -182,14 +182,7 @@ specificAnimals.forEach(animal => {
     }
 })
 
-
-
-
-
-
-console.log(worldPopulation);
-
-
+//console.log(worldPopulation);
 //Test Cases Here v
 //creates an Organism called a girrafe with starting x, y, and speed values of 0, with an "alive" state.
 //const girrafe0 = new Organism(0, 9, 10, "alive", "girrafe", 0, 0, 0);
@@ -204,7 +197,6 @@ console.log(worldPopulation);
 //console.log(girrafe0, girrafe1, girrafe2, girrafe3);
 
 function updateSimulation(){
-
     ctx.fillStyle = 'white'; 
     ctx.fillRect(0, 0, c.width, c.height);
 
@@ -261,12 +253,12 @@ function updateSimulation(){
     //This will cause the Organisms to move in a random direction(up, down, left, right, or diagonal) by the speed.
     for(var i = 0; i < worldPopulation.length; i++){
         if(worldPopulation[i].state === "dead"){
-            console.log("Dead Animals cant fly");
+            //console.log("Dead Animals cant fly");
         }else{
             //North is decreasing y, South is increasing y.
             //East is increasing x, West is decreasing x.
             var direction = allDirections[Math.floor(Math.random() * allDirections.length)];
-            console.log("the direction is: " + direction + " "+ worldPopulation[i].type + i);
+            //console.log("the direction is: " + direction + " "+ worldPopulation[i].type + i);
             if(direction === "north"){
                 worldPopulation[i].y -= worldPopulation[i].speed
             }
@@ -308,40 +300,74 @@ function updateSimulation(){
         if(worldPopulation[i].y < 0){
             worldPopulation[i].y = 0;
         }
-        
     }
 
     //Checking distance between animals for collision
     for(var i = 0; i < worldPopulation.length; i++){
         for(var j = 0; j < worldPopulation.length; j++){
             if(i != j && worldPopulation[i].state != "dead" && worldPopulation[j].state != "dead" && worldPopulation[j].timealive != 0){
-                if(Math.abs(worldPopulation[i].x - worldPopulation[j].x) < 10 && Math.abs(worldPopulation[i].y - worldPopulation[j].y) < 10){
-                    //Animals eat eachother
-                    if(worldPopulation[i].state != "dead"){
-                        var onTheMenu = animalSearchFood(worldPopulation[i].type);
-                        if(onTheMenu.includes(worldPopulation[j].type)){
-                            console.log("There was a murder: " + worldPopulation[i].type + i + " ate " + worldPopulation[j].type + j );
-                            worldPopulation[j].state = "dead";
-                            worldPopulation[i].starvecount = 0;
-                            worldPopulation[i].state = "alive";
-                            worldPopulation[i].food += 1000;
-                        }
+                if(Math.abs(worldPopulation[i].x - worldPopulation[j].x) < organismSize && Math.abs(worldPopulation[i].y - worldPopulation[j].y) < organismSize){
+                    //Animals eat eachother 
+                    var onTheMenu = animalSearchFood(worldPopulation[i].type);
+                    if(onTheMenu.includes(worldPopulation[j].type)){
+                        console.log("There was a murder: " + worldPopulation[i].type + i + " ate " + worldPopulation[j].type + j );
+                        worldPopulation[j].state = "dead";
+                        worldPopulation[i].starvecount = 0;
+                        worldPopulation[i].state = "alive";
+                        worldPopulation[i].food += 1000;
                     }
+
                     //Animals Reproduce
                     if(worldPopulation[i].state != "dead" && worldPopulation[i].type === worldPopulation[j].type && worldPopulation[i].food >= 10/*The organism has to have at least 10 food to reproduce*/ && worldPopulation[j].food >= 10 && worldPopulation[i].timealive >= 10 && worldPopulation[j].timealive >= 10){
                         const temp = new Organism(worldPopulation[i].x, worldPopulation[i].y, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", worldPopulation[i].type, 5, 0, 0);
                         worldPopulation.push(temp);
+                        console.log("baby: " + worldPopulation[i].type + " " + i + " and " + worldPopulation[j].type + " " + j);
+                        worldPopulation[i].food -= 10
+                        worldPopulation[j].food -= 10
                     }
-
                 }
             }
         }
     }
 
+    //Checking if a plant gets eaten by an organism
+    for(let i = 0; i < worldPopulation.length; i++){
+        for(let j = 0; j < worldPlants.length; j++){
+            if(worldPopulation[i].state != "dead" && worldPlants[j].state != "dead"){//checking plant and animal arent dead
+                if(Math.abs(worldPopulation[i].x - worldPlants[j].x) < organismSize && Math.abs(worldPopulation[i].y - worldPlants[j].y) < organismSize){
+                    var isHerbivore = animalSearchFood(worldPopulation[i].type)
+                    if(isHerbivore.includes("plant")){
+                        console.log("There was a plant murder: " + worldPopulation[i].type + i + " ate plant: " + j );
+                        worldPlants[j].state = "dead";
+                        worldPopulation[i].starvecount = 0;
+                        worldPopulation[i].state = "alive";
+                        worldPopulation[i].food += 1000;
+                    }
+                }
+            }
+        }
+    }
+
+        //Drawing the Plants
+    for(var i = 0; i < worldPlants.length; i++){
+        ctx.beginPath();
+        ctx.arc(worldPlants[i].x, worldPlants[i].y, organismSize, 0, 2 * Math.PI);
+        if(worldPlants[i].state === "alive"){
+            ctx.fillStyle = "purple";
+        }else{
+            ctx.fillStyle = "black";
+        }
+
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+    }
+
+
     //Drawing the Organisms
     for(var i = 0; i < worldPopulation.length; i++){
         ctx.beginPath();
-        ctx.arc(worldPopulation[i].x, worldPopulation[i].y, 10, 0, 2 * Math.PI);
+        ctx.arc(worldPopulation[i].x, worldPopulation[i].y, organismSize, 0, 2 * Math.PI);
         if(worldPopulation[i].state === "alive"){
             ctx.fillStyle = "green";
         }else if(worldPopulation[i].state === "starving"){
@@ -359,6 +385,7 @@ function updateSimulation(){
     var aliveOrganisms = 0;
     var deadOrganisms = 0;
     var starvingOrganisms = 0; 
+    var alivePlants = 0;
     for(var i = 0; i < worldPopulation.length; i++){
         if(worldPopulation[i].state === "alive"){
             aliveOrganisms += 1
@@ -370,7 +397,12 @@ function updateSimulation(){
             starvingOrganisms += 1
         }
     }
-    document.getElementById("data").innerHTML = "Number of Alive Organisms: " + aliveOrganisms + "<br>Number of Dead Organisms: " + deadOrganisms + "<br>Number of Starving Organisms: " + starvingOrganisms;
+    for(var i = 0; i < worldPlants.length; i++){
+        if(worldPlants[i].state === "alive"){
+            alivePlants += 1
+        }
+    }
+    document.getElementById("data").innerHTML = "Number of Alive Organisms: " + aliveOrganisms + "<br>Number of Dead Organisms: " + deadOrganisms + "<br>Number of Starving Organisms: " + starvingOrganisms + "<br>Number of Alive Plants: " + alivePlants;
 }
 
 //This calls the function updateSimulation every second(1 millisecond)

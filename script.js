@@ -11,7 +11,7 @@ const ctx = c.getContext("2d");
 // ctx.stroke();
 
 //var specificAnimalsTotal = 0;
-const specificAnimals = [{type: "girrafe", count: 0, eats: ["plant"]}, {type: "lion", count: 0, eats: ["girrafe", "zebra"]}, {type: "zebra", count: 0, eats: ["plant"]}, {type: "tiger", count: 0, eats: ["zebra", "girrafe"]}]
+const specificAnimals = [{type: "girrafe", count: 0, eats: ["plant"]}, {type: "lion", count: 0, eats: ["girrafe"]}, {type: "zebra", count: 0, eats: ["plant"]}, {type: "tiger", count: 0, eats: ["zebra"]}]
 const knownAnimalTypes = specificAnimals.map((x) => x.type);
 
 // for (var b = 0; b < specificAnimals.length; b++){
@@ -32,6 +32,7 @@ const worldPopulation = [];
 const worldPlants = [];
 const numberOfRandomPlants = 100
 const organismSize = 10
+const alivePlantgraph = []
 
 
 //At what value do you want the animals to starve to death?
@@ -163,6 +164,30 @@ class Organism {
         }
     };
 };
+let myChart;
+
+function initializeChart() {
+    const ctx = document.getElementById("myChart").getContext("2d");
+
+    myChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [{
+                label: "Alive Plants",
+                data: [],
+                borderColor: "red",
+                fill: false
+            }]
+        },
+        options: {
+            animation: false,
+            responsive: true
+        }
+    });
+}
+
+initializeChart();
 
 for (var i = 0; i < numberOfRandomAnimals; i++){
     const temp = new Organism(0, 0, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", knownAnimalTypes[Math.floor(Math.random() * knownAnimalTypes.length)], 5, 0, 0);
@@ -195,7 +220,7 @@ specificAnimals.forEach(animal => {
 // const dog = new Organism(0, 0, 0, "alive", "dog");
 //console.log(girrafe0);
 //console.log(girrafe0, girrafe1, girrafe2, girrafe3);
-
+    let stepCounter = 0;
 function updateSimulation(){
     ctx.fillStyle = 'white'; 
     ctx.fillRect(0, 0, c.width, c.height);
@@ -382,6 +407,7 @@ function updateSimulation(){
     }
 
     //Displaying information on organisms
+
     var aliveOrganisms = 0;
     var deadOrganisms = 0;
     var starvingOrganisms = 0; 
@@ -399,11 +425,34 @@ function updateSimulation(){
     }
     for(var i = 0; i < worldPlants.length; i++){
         if(worldPlants[i].state === "alive"){
-            alivePlants += 1
+            alivePlants+= 1
         }
     }
+    alivePlantgraph.push(alivePlants);
+    //(unslash following code if you want the graph to move to only encompass 100 data points)
+    //if (alivePlantgraph.length > 100) {
+    //    alivePlantgraph.shift();
+    //    myChart.data.labels.shift();
+       
+    //}
+    stepCounter++;
+
+    myChart.data.labels.push(stepCounter);
+    myChart.data.datasets[0].data.push(alivePlants);
+    myChart.update();
+
+
+    //console.log(alivePlantgraph);
     document.getElementById("data").innerHTML = "Number of Alive Organisms: " + aliveOrganisms + "<br>Number of Dead Organisms: " + deadOrganisms + "<br>Number of Starving Organisms: " + starvingOrganisms + "<br>Number of Alive Plants: " + alivePlants;
+        
+
+   
+
+
+
 }
 
 //This calls the function updateSimulation every second(1 millisecond)
-setInterval(updateSimulation, 1);
+setInterval(updateSimulation, 100);
+
+

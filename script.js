@@ -1,30 +1,8 @@
 
 const c = document.getElementById("myCanvas");
 const ctx = c.getContext("2d");
-//ctx.fillStyle = "green";
-//ctx.fillRect(0, 0, 150, 75);
-// ctx.beginPath();
-// ctx.arc(100, 100, 50, 0, 2 * Math.PI);
-// ctx.fillStyle = "green";
-// ctx.lineWidth = 2;
-// ctx.fill();
-// ctx.stroke();
-
-//var specificAnimalsTotal = 0;
 const specificAnimals = [{type: "girrafe", count: 0, eats: ["plant"]}, {type: "lion", count: 0, eats: ["girrafe"]}, {type: "zebra", count: 0, eats: ["plant"]}, {type: "tiger", count: 0, eats: ["zebra"]}]
 const knownAnimalTypes = specificAnimals.map((x) => x.type);
-
-// for (var b = 0; b < specificAnimals.length; b++){
-//     specificAnimalsTotal += specificAnimals[b];
-//}
-//console.log(specificAnimalsTotal);
-function animalSearchFood(needle){
-    for(i = 0; i < specificAnimals.length; i++){
-        if(specificAnimals[i].type === needle){
-            return specificAnimals[i].eats;
-        }
-    }
-}
 //How many random animals do you want to create?
 const numberOfRandomAnimals = 100;
 const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
@@ -33,10 +11,20 @@ const worldPlants = [];
 const numberOfRandomPlants = 100
 const organismSize = 10
 const alivePlantgraph = []
-
-
-//At what value do you want the animals to starve to death?
+const numAliveLionsgraph = []
+const numAliveTigersgraph = []
+const numAliveZebrasgraph = []
+const numAliveGirrafesgraph = []
+//when do animals starve?
 const starveValue = 10000;
+
+function animalSearchFood(needle){
+    for(i = 0; i < specificAnimals.length; i++){
+        if(specificAnimals[i].type === needle){
+            return specificAnimals[i].eats;
+        }
+    }
+}
 
 //creates a plant class 
 class Plants{
@@ -81,13 +69,9 @@ class Plants{
 
 //Creates an "Organism" class which has properties x, y, and speed, and a state.\
 class Organism {
-//    static knownAnimalTypes = ["girrafe", "frog", "cat", "dog"];
-
     static knownStates = ["alive", "dead", "wounded", "starving"];
     static maximumBoundary = 999;
-    constructor(x, y, speed, state, type, food, starvecount, timealive){
-        //(0,0) is at the middle of the grid and we allow negative positions. We do not allow numbers with their abs. value greater than the bounds of the canvas
-        
+    constructor(x, y, speed, state, type, food, starvecount, timealive, breedCooldown, breedTimer){
         if(typeof x === "number"){
             if(Math.abs(x) > Organism.maximumBoundary){
                 throw new Error("ERROR: X Value is out of range. (" + x + ") Maximum X value: +/-" + Organism.maximumBoundary);
@@ -117,7 +101,6 @@ class Organism {
             throw new Error("ERROR: Speed Value is Not A Number- " + speed);
         }
 
-
         if(Organism.knownStates.includes(state)){
             this.state = state;
         }else{
@@ -129,7 +112,6 @@ class Organism {
         }else{
             throw new Error("ERROR: Unknown Type- " + type + " Valid Types: " + knownAnimalTypes);
         }
-        
 
         if(typeof food === "number"){
             if(food < 0){
@@ -141,7 +123,6 @@ class Organism {
             throw new Error("ERROR: Food Value is Not A Number- " + food);
         }
 
-
         if(typeof starvecount === "number"){
             if(starvecount < 0){
                 throw new Error("ERROR: Starve Count Value is Not A Positive Number. (" + starvecount + ")");
@@ -152,7 +133,6 @@ class Organism {
             throw new Error("ERROR: Starve Count Value is Not A Number- " + starvecount);
         }
 
-
         if(typeof timealive === "number"){
             if(timealive < 0){
                 throw new Error("ERROR: Time Alive Value is Not A Positive Number. (" + timealive + ")");
@@ -162,10 +142,30 @@ class Organism {
         }else{
             throw new Error("ERROR: Time Alive Value is Not A Number- " + timealive);
         }
+
+        if(typeof breedCooldown === "number"){
+            if(breedCooldown < 0){
+                throw new Error("ERROR: Breed Cooldown Value is Not A Positive Number. (" + breedCooldown + ")");
+            }else{
+                this.breedCooldown = breedCooldown;
+            }
+        }else{
+            throw new Error("ERROR: Breed Cooldown Value is Not A Number- " + breedCooldown);
+        }
+
+        if(typeof breedTimer === "number"){
+            if(breedTimer < 0){
+                throw new Error("ERROR: Breed Timer Value is Not A Positive Number. (" + breedTimer + ")");
+            }else{
+                this.breedTimer = breedTimer;
+            }
+        }else{
+            throw new Error("ERROR: Breed Timer Value is Not A Number- " + breedTimer);
+        }
     };
 };
-let myChart;
 
+let myChart;
 function initializeChart() {
     const ctx = document.getElementById("myChart").getContext("2d");
 
@@ -177,6 +177,26 @@ function initializeChart() {
                 label: "Alive Plants",
                 data: [],
                 borderColor: "red",
+                fill: false
+            }, {
+                label: "Alive Lions",
+                data: [],
+                borderColor: "yellow",
+                fill: false
+            }, {
+                label: "Alive Tigers",
+                data: [],
+                borderColor: "green",
+                fill: false
+            }, {
+                label: "Alive Zebras",
+                data: [],
+                borderColor: "purple",
+                fill: false
+            }, {
+                label: "Alive Girrafes",
+                data: [],
+                borderColor: "pink",
                 fill: false
             }]
         },
@@ -190,7 +210,7 @@ function initializeChart() {
 initializeChart();
 
 for (var i = 0; i < numberOfRandomAnimals; i++){
-    const temp = new Organism(0, 0, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", knownAnimalTypes[Math.floor(Math.random() * knownAnimalTypes.length)], 5, 0, 0);
+    const temp = new Organism(0, 0, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", knownAnimalTypes[Math.floor(Math.random() * knownAnimalTypes.length)], 500, 0, 0, 100, 0);
     worldPopulation.push(temp);
 }
 
@@ -200,34 +220,21 @@ for (var i = 0; i < numberOfRandomPlants; i++){
 }
 
 specificAnimals.forEach(animal => {
-//    console.log (animal.type + ": " + animal.count);
     for (var i = 0; i < animal.count; i++){
-        const temp = new Organism(0, 0, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", animal.type, 5, 0, 0);
+        const temp = new Organism(0, 0, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", animal.type, 500, 0, 0, 100, 0);
         worldPopulation.push(temp);
     }
 })
 
-//console.log(worldPopulation);
-//Test Cases Here v
-//creates an Organism called a girrafe with starting x, y, and speed values of 0, with an "alive" state.
-//const girrafe0 = new Organism(0, 9, 10, "alive", "girrafe", 0, 0, 0);
-//const girrafe1 = new Organism(10000, 0, 0, "dead", "girrafe");
-//const girrafe3 = new Organism(0, 0, 0, "hal", "girrafe");
-//const girrafe2 = new Organism(0, 0, 0, "alive", "chicken");
-// const girrafe = new Organism(0, 0, 0, "alive", "girrafe");
-// const frog = new Organism(0, 0, 0, "alive", "frog");
-// const cat = new Organism(0, 0, 0, "alive", "cat");
-// const dog = new Organism(0, 0, 0, "alive", "dog");
-//console.log(girrafe0);
-//console.log(girrafe0, girrafe1, girrafe2, girrafe3);
-    let stepCounter = 0;
+let stepCounter = 0;
 function updateSimulation(){
     ctx.fillStyle = 'white'; 
     ctx.fillRect(0, 0, c.width, c.height);
-
+    
+    
     //This checks if an Organism has food, and if it doesnt starts a starving count. When this reaches the starve value, the animals state becomes "dead".
     for(var i = 0; i < worldPopulation.length; i++){
-
+         console.log(worldPopulation[i].breedCooldown + "ANDDDDDDD" + worldPopulation[i].breedTimer);
         if(worldPopulation[i].food === 0 && worldPopulation[i].state != "dead"){
             worldPopulation[i].state = "starving";
         }else if(worldPopulation[i].food > 0){
@@ -238,7 +245,10 @@ function updateSimulation(){
         }else if(worldPopulation[i].state === "starving"){
             worldPopulation[i].starvecount += 1;
         }
-        
+        if(worldPopulation[i].timealive >= 1000){
+            worldPopulation[i].state = "dead";
+            console.log(worldPopulation[i].type + i + "died of old age");
+        }
     }
 
     //This will make Organisms appear at a random position to start using math.random
@@ -277,13 +287,11 @@ function updateSimulation(){
 
     //This will cause the Organisms to move in a random direction(up, down, left, right, or diagonal) by the speed.
     for(var i = 0; i < worldPopulation.length; i++){
-        if(worldPopulation[i].state === "dead"){
-            //console.log("Dead Animals cant fly");
-        }else{
+        if(worldPopulation[i].state != "dead"){
             //North is decreasing y, South is increasing y.
             //East is increasing x, West is decreasing x.
             var direction = allDirections[Math.floor(Math.random() * allDirections.length)];
-            //console.log("the direction is: " + direction + " "+ worldPopulation[i].type + i);
+
             if(direction === "north"){
                 worldPopulation[i].y -= worldPopulation[i].speed
             }
@@ -326,7 +334,7 @@ function updateSimulation(){
             worldPopulation[i].y = 0;
         }
     }
-
+   
     //Checking distance between animals for collision
     for(var i = 0; i < worldPopulation.length; i++){
         for(var j = 0; j < worldPopulation.length; j++){
@@ -343,12 +351,14 @@ function updateSimulation(){
                     }
 
                     //Animals Reproduce
-                    if(worldPopulation[i].state != "dead" && worldPopulation[i].type === worldPopulation[j].type && worldPopulation[i].food >= 10/*The organism has to have at least 10 food to reproduce*/ && worldPopulation[j].food >= 10 && worldPopulation[i].timealive >= 10 && worldPopulation[j].timealive >= 10){
-                        const temp = new Organism(worldPopulation[i].x, worldPopulation[i].y, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", worldPopulation[i].type, 5, 0, 0);
+                    if(worldPopulation[i].state != "dead" && worldPopulation[i].type === worldPopulation[j].type && worldPopulation[i].food >= 10/*The organism has to have at least 10 food to reproduce*/ && worldPopulation[j].food >= 10 && worldPopulation[i].timealive >= 100 && worldPopulation[j].timealive >= 100 && worldPopulation[i].breedTimer >= worldPopulation[i].breedCooldown && worldPopulation[j].breedTimer >= worldPopulation[j].breedCooldown){
+                        const temp = new Organism(worldPopulation[i].x, worldPopulation[i].y, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", worldPopulation[i].type, 5, 0, 0, 100, 0);
                         worldPopulation.push(temp);
                         console.log("baby: " + worldPopulation[i].type + " " + i + " and " + worldPopulation[j].type + " " + j);
-                        worldPopulation[i].food -= 10
-                        worldPopulation[j].food -= 10
+                        worldPopulation[i].food -= 10;
+                        worldPopulation[j].food -= 10;
+                        worldPopulation[i].breedTimer = 0;
+                        worldPopulation[j].breedTimer = 0;
                     }
                 }
             }
@@ -388,7 +398,6 @@ function updateSimulation(){
         ctx.stroke();
     }
 
-
     //Drawing the Organisms
     for(var i = 0; i < worldPopulation.length; i++){
         ctx.beginPath();
@@ -400,18 +409,21 @@ function updateSimulation(){
         }else{
             ctx.fillStyle = "red";
         }
-
+//ctx.fillText("L", worldPopulation[i].x, worldPopulation[i].y);
         ctx.lineWidth = 2;
         ctx.fill();
         ctx.stroke();
     }
 
     //Displaying information on organisms
-
     var aliveOrganisms = 0;
     var deadOrganisms = 0;
     var starvingOrganisms = 0; 
     var alivePlants = 0;
+    var numAliveLions = 0;
+    var numAliveTigers = 0;
+    var numAliveZebras = 0;
+    var numAliveGirrafes = 0;
     for(var i = 0; i < worldPopulation.length; i++){
         if(worldPopulation[i].state === "alive"){
             aliveOrganisms += 1
@@ -422,6 +434,22 @@ function updateSimulation(){
         if(worldPopulation[i].state === "starving"){
             starvingOrganisms += 1
         }
+        if(worldPopulation[i].type === "lion" && worldPopulation[i].state != "dead"){
+            numAliveLions +=1
+
+        }
+        if(worldPopulation[i].type === "tiger" && worldPopulation[i].state != "dead"){
+            numAliveTigers +=1
+        }
+        if(worldPopulation[i].type === "zebra" && worldPopulation[i].state != "dead"){
+            numAliveZebras +=1
+        }
+        if(worldPopulation[i].type === "girrafe" && worldPopulation[i].state != "dead"){
+            numAliveGirrafes +=1
+        }
+        if(worldPopulation[i].breedTimer <= worldPopulation[i].breedCooldown){
+            worldPopulation[i].breedTimer += 1;
+        }
     }
     for(var i = 0; i < worldPlants.length; i++){
         if(worldPlants[i].state === "alive"){
@@ -429,30 +457,28 @@ function updateSimulation(){
         }
     }
     alivePlantgraph.push(alivePlants);
+    numAliveGirrafesgraph.push(numAliveGirrafes);
+    numAliveLionsgraph.push(numAliveLions);
+    numAliveTigersgraph.push(numAliveTigersgraph);
+    numAliveZebrasgraph.push(numAliveZebrasgraph);
     //(unslash following code if you want the graph to move to only encompass 100 data points)
     //if (alivePlantgraph.length > 100) {
     //    alivePlantgraph.shift();
-    //    myChart.data.labels.shift();
+     //   myChart.data.labels.shift();
        
     //}
     stepCounter++;
 
     myChart.data.labels.push(stepCounter);
     myChart.data.datasets[0].data.push(alivePlants);
+    myChart.data.datasets[1].data.push(numAliveLions);
+    myChart.data.datasets[2].data.push(numAliveTigers);
+    myChart.data.datasets[3].data.push(numAliveZebras);
+    myChart.data.datasets[4].data.push(numAliveGirrafes);
     myChart.update();
 
-
-    //console.log(alivePlantgraph);
     document.getElementById("data").innerHTML = "Number of Alive Organisms: " + aliveOrganisms + "<br>Number of Dead Organisms: " + deadOrganisms + "<br>Number of Starving Organisms: " + starvingOrganisms + "<br>Number of Alive Plants: " + alivePlants;
-        
-
-   
-
-
-
 }
 
-//This calls the function updateSimulation every second(1 millisecond)
+//This calls the function updateSimulation every _ milliseconds
 setInterval(updateSimulation, 100);
-
-

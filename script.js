@@ -8,7 +8,7 @@ const numberOfRandomAnimals = 100;
 const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
 const worldPopulation = [];
 const worldPlants = [];
-const numberOfRandomPlants = 100
+const numberOfRandomPlants = 300
 const organismSize = 10
 const alivePlantgraph = []
 const numAliveLionsgraph = []
@@ -165,6 +165,25 @@ class Organism {
     };
 };
 
+class Disaster {
+    constructor(x, y, speed, radius){
+        this.x = x;
+        this.y = y;
+        this.speed = speed;
+        this.radius = radius;
+    }
+    
+    hurricane(){
+        for(let i = 0; i < worldPopulation.length; i++){
+            if(Math.abs(worldPopulation[i].x - this.x) <= this.radius || Math.abs(worldPopulation[i].x - this.x) <= organismSize){
+                if(Math.abs(worldPopulation[i].y - this.y) <= this.radius || Math.abs(worldPopulation[i].y - this.y) <= organismSize){
+                    
+                }
+            }
+        }
+    }
+}
+
 let myChart;
 function initializeChart() {
     const ctx = document.getElementById("myChart").getContext("2d");
@@ -234,7 +253,7 @@ function updateSimulation(){
     
     //This checks if an Organism has food, and if it doesnt starts a starving count. When this reaches the starve value, the animals state becomes "dead".
     for(var i = 0; i < worldPopulation.length; i++){
-         console.log(worldPopulation[i].breedCooldown + "ANDDDDDDD" + worldPopulation[i].breedTimer);
+         //console.log(worldPopulation[i].breedCooldown + "ANDDDDDDD" + worldPopulation[i].breedTimer);
         if(worldPopulation[i].food === 0 && worldPopulation[i].state != "dead"){
             worldPopulation[i].state = "starving";
         }else if(worldPopulation[i].food > 0){
@@ -245,7 +264,7 @@ function updateSimulation(){
         }else if(worldPopulation[i].state === "starving"){
             worldPopulation[i].starvecount += 1;
         }
-        if(worldPopulation[i].timealive >= 1000){
+        if(worldPopulation[i].timealive >= 10000){
             worldPopulation[i].state = "dead";
             console.log(worldPopulation[i].type + i + "died of old age");
         }

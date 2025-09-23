@@ -15,6 +15,9 @@ const numAliveLionsgraph = []
 const numAliveTigersgraph = []
 const numAliveZebrasgraph = []
 const numAliveGirrafesgraph = []
+const hurricanesize = 20
+const naturalDisasterslist = []
+const naturalDisasters = 2
 //when do animals starve?
 const starveValue = 10000;
 
@@ -177,7 +180,13 @@ class Disaster {
         for(let i = 0; i < worldPopulation.length; i++){
             if(Math.abs(worldPopulation[i].x - this.x) <= this.radius || Math.abs(worldPopulation[i].x - this.x) <= organismSize){
                 if(Math.abs(worldPopulation[i].y - this.y) <= this.radius || Math.abs(worldPopulation[i].y - this.y) <= organismSize){
-                    
+                    worldPopulation[i].state = "dead";
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, hurricanesize, 0, 2 * Math.PI);
+                        ctx.fillStyle= "orange";
+                        ctx.lineWidth = 2;
+                        ctx.fill();
+                        ctx.stroke();
                 }
             }
         }
@@ -487,6 +496,16 @@ function updateSimulation(){
        
     //}
     stepCounter++;
+
+    for(let i = 0; i < naturalDisasters; i++){
+        var selector = Math.floor(Math.random() * 3 + 1);
+        if(selector === 1){
+            worldPlants[i].x = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
+            naturalDisasterslist.push(new Disaster(Math.floor(Math.random() * (Plants.maximumBoundary + 1)),Math.floor(Math.random() * (Plants.maximumBoundary + 1)), 10, hurricanesize))
+        }
+        naturalDisasterslist[i].hurricane(naturalDisasterslist[i].x, naturalDisasterslist[i].y, 50, 20);
+    }
+    
 
     myChart.data.labels.push(stepCounter);
     myChart.data.datasets[0].data.push(alivePlants);

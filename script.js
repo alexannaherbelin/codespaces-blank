@@ -5,10 +5,10 @@ const specificAnimals = [{type: "girrafe", count: 0, eats: ["plant"]}, {type: "l
 const knownAnimalTypes = specificAnimals.map((x) => x.type);
 //How many random animals do you want to create?
 const numberOfRandomAnimals = 100;
-const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
+//const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
 const worldPopulation = [];
 const worldPlants = [];
-const numberOfRandomPlants = 300
+const numberOfRandomPlants = 3000
 const organismSize = 10
 const alivePlantgraph = []
 const numAliveLionsgraph = []
@@ -17,7 +17,8 @@ const numAliveZebrasgraph = []
 const numAliveGirrafesgraph = []
 const hurricanesize = 20
 const naturalDisasterslist = []
-const naturalDisasters = 2
+const naturalDisasters = 5
+const directions = [-1, 0, 1]
 //when do animals starve?
 const starveValue = 10000;
 
@@ -297,30 +298,61 @@ function updateSimulation(){
     }
 
     //This will make Plants appear at a random position to start using math.random
-    for(var i = 0; i < worldPlants.length; i++){
-        if(worldPlants[i].x === 0){
-            if(worldPlants[i].timealive === 0){
-                worldPlants[i].x = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
-            }
-        }
-        if(worldPlants[i].y === 0){
-            if(worldPlants[i].timealive === 0){
-                worldPlants[i].y = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
-            }
-        }
-        if(worldPlants[i].state != "dead" ){
-            worldPlants[i].timealive += 1
-        }
+    for (var i = 0; i < worldPlants.length; i++){
+    if(worldPlants[i].timealive === 0){
+        worldPlants[i].x = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
+        worldPlants[i].y = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
     }
+    if(worldPlants[i].state != "dead" ){
+        worldPlants[i].timealive += 1
+    }
+}
 
     //This will cause the Organisms to move in a random direction(up, down, left, right, or diagonal) by the speed.
     for(var i = 0; i < worldPopulation.length; i++){
         if(worldPopulation[i].state != "dead"){
             //North is decreasing y, South is increasing y.
             //East is increasing x, West is decreasing x.
-            var direction = allDirections[Math.floor(Math.random() * allDirections.length)];
 
-            if(direction === "north"){
+            let speedX = worldPopulation[i].speed * directions[Math.floor(Math.random() * directions.length)]
+            let speedY = worldPopulation[i].speed * directions[Math.floor(Math.random() * directions.length)]
+            worldPopulation[i].x += speedX
+            worldPopulation[i].y += speedY
+
+            if(worldPopulation[i].x > Organism.maximumBoundary){
+                worldPopulation[i].x = Organism.maximumBoundary;
+            }
+            if(worldPopulation[i].x < 0){
+                worldPopulation[i].x = 0;
+            }
+            if(worldPopulation[i].y > Organism.maximumBoundary){
+                worldPopulation[i].y = Organism.maximumBoundary;
+            }
+            if(worldPopulation[i].y < 0){
+                worldPopulation[i].y = 0;
+            }
+
+
+        }
+            //var direction = allDirections[Math.floor(Math.random() * allDirections.length)];
+
+
+        // to whom it may concern: Albinson thinks that this is 
+        // definitely the better way to do this and while he agrees
+        // not to "take off a lot of points", he does reserve
+        // the right to take off a very small amount of points.  x < 2.
+        //signed - Mr Matthew Albinson, 9/24 year of our lord 2025
+
+        // worldPopulation[i].y += worldPopulation[i].speedY
+        // worldPopulation[i].x += worldPopulation[i].speedX
+
+        // if and/or when this solution is implemented, full point shall be
+        // issued to said student.  Unless they are too demanding in which
+        // case I reserve the right to take one point off for me troubles
+
+
+
+         /*   if(direction === "north"){
                 worldPopulation[i].y -= worldPopulation[i].speed
             }
             if(direction === "northeast"){
@@ -360,7 +392,7 @@ function updateSimulation(){
         }
         if(worldPopulation[i].y < 0){
             worldPopulation[i].y = 0;
-        }
+        }*/
     }
    
     //Checking distance between animals for collision
@@ -498,11 +530,7 @@ function updateSimulation(){
     stepCounter++;
 
     for(let i = 0; i < naturalDisasters; i++){
-        var selector = Math.floor(Math.random() * 3 + 1);
-        if(selector === 1){
-            worldPlants[i].x = Math.floor(Math.random() * (Plants.maximumBoundary + 1));
-            naturalDisasterslist.push(new Disaster(Math.floor(Math.random() * (Plants.maximumBoundary + 1)),Math.floor(Math.random() * (Plants.maximumBoundary + 1)), 10, hurricanesize))
-        }
+        naturalDisasterslist.push(new Disaster(Math.floor(Math.random() * (Plants.maximumBoundary + 1)),Math.floor(Math.random() * (Plants.maximumBoundary + 1)), 10, hurricanesize))
         naturalDisasterslist[i].hurricane(naturalDisasterslist[i].x, naturalDisasterslist[i].y, 50, 20);
     }
     

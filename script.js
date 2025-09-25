@@ -4,11 +4,11 @@ const ctx = c.getContext("2d");
 const specificAnimals = [{type: "girrafe", count: 0, eats: ["plant"]}, {type: "lion", count: 0, eats: ["girrafe"]}, {type: "zebra", count: 0, eats: ["plant"]}, {type: "tiger", count: 0, eats: ["zebra"]}]
 const knownAnimalTypes = specificAnimals.map((x) => x.type);
 //How many random animals do you want to create?
-const numberOfRandomAnimals = 100;
+const numberOfRandomAnimals = 500;
 //const allDirections = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest", "stayput"];
 const worldPopulation = [];
 const worldPlants = [];
-const numberOfRandomPlants = 3000
+const numberOfRandomPlants = 1000
 const organismSize = 10
 const alivePlantgraph = []
 const numAliveLionsgraph = []
@@ -179,18 +179,21 @@ class Disaster {
     
     hurricane(){
         for(let i = 0; i < worldPopulation.length; i++){
-            if(Math.abs(worldPopulation[i].x - this.x) <= this.radius || Math.abs(worldPopulation[i].x - this.x) <= organismSize){
-                if(Math.abs(worldPopulation[i].y - this.y) <= this.radius || Math.abs(worldPopulation[i].y - this.y) <= organismSize){
+            if (worldPopulation[i].state != "dead") {
+                if(Math.abs(worldPopulation[i].x - this.x) <= this.radius && Math.abs(worldPopulation[i].y - this.y) <= this.radius){
                     worldPopulation[i].state = "dead";
-                        ctx.beginPath();
-                        ctx.arc(this.x, this.y, hurricanesize, 0, 2 * Math.PI);
-                        ctx.fillStyle= "orange";
-                        ctx.lineWidth = 2;
-                        ctx.fill();
-                        ctx.stroke();
                 }
             }
         }
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = "orange";
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
     }
 }
 
@@ -238,8 +241,13 @@ function initializeChart() {
 
 initializeChart();
 
+for(let i = 0; i < naturalDisasters; i++){
+    naturalDisasterslist.push(new Disaster(Math.floor(Math.random() * (Plants.maximumBoundary + 1)),Math.floor(Math.random() * (Plants.maximumBoundary + 1)), 10, hurricanesize))
+    naturalDisasterslist[i].hurricane(naturalDisasterslist[i].x, naturalDisasterslist[i].y, 50, 20);
+}
+
 for (var i = 0; i < numberOfRandomAnimals; i++){
-    const temp = new Organism(0, 0, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", knownAnimalTypes[Math.floor(Math.random() * knownAnimalTypes.length)], 500, 0, 0, 100, 0);
+    const temp = new Organism(0, 0, Math.floor(Math.random() * 5) + .25/* this sets the Organism's speed to anything from 0 to 1.*/, "alive", knownAnimalTypes[Math.floor(Math.random() * knownAnimalTypes.length)], 500, 0, 0, 10, 0);
     worldPopulation.push(temp);
 }
 
@@ -254,6 +262,32 @@ specificAnimals.forEach(animal => {
         worldPopulation.push(temp);
     }
 })
+
+function move(input){
+    for(var i = 0; i < input.length; i++){
+        if(input[i].state != "dead"){
+            //North is decreasing y, South is increasing y.
+            //East is increasing x, West is decreasing x.
+            let speedX = input[i].speed * directions[Math.floor(Math.random() * directions.length)]
+            let speedY = input[i].speed * directions[Math.floor(Math.random() * directions.length)]
+            input[i].x += speedX
+            input[i].y += speedY
+
+            if(input[i].x > Organism.maximumBoundary){
+                input[i].x = Organism.maximumBoundary;
+            }
+            if(input[i].x < 0){
+                input[i].x = 0;
+            }
+            if(input[i].y > Organism.maximumBoundary){
+                input[i].y = Organism.maximumBoundary;
+            }
+            if(input[i].y < 0){
+                input[i].y = 0;
+            }
+        }
+    }
+}
 
 let stepCounter = 0;
 function updateSimulation(){
@@ -309,32 +343,9 @@ function updateSimulation(){
 }
 
     //This will cause the Organisms to move in a random direction(up, down, left, right, or diagonal) by the speed.
-    for(var i = 0; i < worldPopulation.length; i++){
-        if(worldPopulation[i].state != "dead"){
-            //North is decreasing y, South is increasing y.
-            //East is increasing x, West is decreasing x.
-
-            let speedX = worldPopulation[i].speed * directions[Math.floor(Math.random() * directions.length)]
-            let speedY = worldPopulation[i].speed * directions[Math.floor(Math.random() * directions.length)]
-            worldPopulation[i].x += speedX
-            worldPopulation[i].y += speedY
-
-            if(worldPopulation[i].x > Organism.maximumBoundary){
-                worldPopulation[i].x = Organism.maximumBoundary;
-            }
-            if(worldPopulation[i].x < 0){
-                worldPopulation[i].x = 0;
-            }
-            if(worldPopulation[i].y > Organism.maximumBoundary){
-                worldPopulation[i].y = Organism.maximumBoundary;
-            }
-            if(worldPopulation[i].y < 0){
-                worldPopulation[i].y = 0;
-            }
-
-
-        }
-            //var direction = allDirections[Math.floor(Math.random() * allDirections.length)];
+    move(worldPopulation);
+    //This causes hurricanes to move
+    move(naturalDisasterslist);
 
 
         // to whom it may concern: Albinson thinks that this is 
@@ -343,58 +354,10 @@ function updateSimulation(){
         // the right to take off a very small amount of points.  x < 2.
         //signed - Mr Matthew Albinson, 9/24 year of our lord 2025
 
-        // worldPopulation[i].y += worldPopulation[i].speedY
-        // worldPopulation[i].x += worldPopulation[i].speedX
-
         // if and/or when this solution is implemented, full point shall be
         // issued to said student.  Unless they are too demanding in which
         // case I reserve the right to take one point off for me troubles
-
-
-
-         /*   if(direction === "north"){
-                worldPopulation[i].y -= worldPopulation[i].speed
-            }
-            if(direction === "northeast"){
-                worldPopulation[i].y -= worldPopulation[i].speed
-                worldPopulation[i].x += worldPopulation[i].speed
-            }
-            if(direction === "east"){
-                worldPopulation[i].x += worldPopulation[i].speed
-            }
-            if(direction === "southeast"){
-                worldPopulation[i].y += worldPopulation[i].speed
-                worldPopulation[i].x += worldPopulation[i].speed
-            }
-            if(direction === "south"){
-                worldPopulation[i].y += worldPopulation[i].speed    
-            }
-            if(direction === "southwest"){
-                worldPopulation[i].y += worldPopulation[i].speed
-                worldPopulation[i].x -= worldPopulation[i].speed
-            }
-            if(direction === "west"){
-                worldPopulation[i].x -= worldPopulation[i].speed
-            }
-            if(direction === "northwest"){
-                worldPopulation[i].y -= worldPopulation[i].speed
-                worldPopulation[i].x -= worldPopulation[i].speed
-            }
-        }
-        if(worldPopulation[i].x > Organism.maximumBoundary){
-            worldPopulation[i].x = Organism.maximumBoundary;
-        }
-        if(worldPopulation[i].x < 0){
-            worldPopulation[i].x = 0;
-        }
-        if(worldPopulation[i].y > Organism.maximumBoundary){
-            worldPopulation[i].y = Organism.maximumBoundary;
-        }
-        if(worldPopulation[i].y < 0){
-            worldPopulation[i].y = 0;
-        }*/
-    }
-   
+    
     //Checking distance between animals for collision
     for(var i = 0; i < worldPopulation.length; i++){
         for(var j = 0; j < worldPopulation.length; j++){
@@ -529,9 +492,10 @@ function updateSimulation(){
     //}
     stepCounter++;
 
-    for(let i = 0; i < naturalDisasters; i++){
-        naturalDisasterslist.push(new Disaster(Math.floor(Math.random() * (Plants.maximumBoundary + 1)),Math.floor(Math.random() * (Plants.maximumBoundary + 1)), 10, hurricanesize))
-        naturalDisasterslist[i].hurricane(naturalDisasterslist[i].x, naturalDisasterslist[i].y, 50, 20);
+
+    for (let i = 0; i < naturalDisasterslist.length; i++) {
+        naturalDisasterslist[i].hurricane();
+        naturalDisasterslist[i].draw();
     }
     
 
@@ -547,4 +511,4 @@ function updateSimulation(){
 }
 
 //This calls the function updateSimulation every _ milliseconds
-setInterval(updateSimulation, 100);
+setInterval(updateSimulation, 50);
